@@ -26,9 +26,8 @@ def test_lectura_descarta_localizacion_y_normaliza_nombres(raw_sintetico):
     serie = m.leer_serie(raw_sintetico)
     assert "localizacion" not in serie
     assert "departamento" in serie
-    # El archivo 2015 informa el período 2014
-    assert serie["anio"].unique().tolist() == [2014]
-    assert serie["anio_archivo"].unique().tolist() == [2015]
+    # El año es el del archivo (ciclo lectivo de la matrícula)
+    assert serie["anio"].unique().tolist() == [2015]
 
 
 def test_sobreedad_vacia_con_matricula_pasa_a_cero_y_conserva_original(raw_sintetico):
@@ -91,9 +90,9 @@ def test_agregar_grupo_sin_datos_queda_na():
 
 
 def test_alertas_registradas():
-    texto = alerta_para(ALERTAS, 2021, "repitentes", "Santa Cruz", nivel="secundaria")
+    texto = alerta_para(ALERTAS, 2022, "repitentes", "Santa Cruz", nivel="secundaria")
     assert texto and "17 %" in texto
-    assert alerta_para(ALERTAS, 2021, "repitentes", "Santa Cruz", nivel="primaria") is None
+    assert alerta_para(ALERTAS, 2022, "repitentes", "Santa Cruz", nivel="primaria") is None
 
 
 # --- Integración: archivos reales de data/raw/ (fixtures de conftest; se saltean si faltan) ---
@@ -102,8 +101,7 @@ ANIOS = list(range(2011, 2026))
 
 
 def test_serie_completa_y_clave_unica(ancho):
-    assert sorted(ancho["anio_archivo"].unique()) == ANIOS
-    assert sorted(ancho["anio"].unique()) == [a - m.DESFASE_PERIODO for a in ANIOS]
+    assert sorted(ancho["anio"].unique()) == ANIOS
     assert ancho.groupby("anio")["provincia"].nunique().eq(24).all()
     assert not ancho.duplicated(["anio", *m.DIMENSIONES]).any()
     assert set(ancho["provincia"]) == m.PRIMARIA_6 | m.PRIMARIA_7
@@ -111,8 +109,8 @@ def test_serie_completa_y_clave_unica(ancho):
 
 
 def test_no_graduada_es_na_antes_de_2022(ancho):
-    assert ancho.loc[ancho["anio"] < 2022, "_20"].isna().all()
-    assert ancho.loc[ancho["anio"] >= 2022, "_20"].notna().any()
+    assert ancho.loc[ancho["anio"] < 2023, "_20"].isna().all()
+    assert ancho.loc[ancho["anio"] >= 2023, "_20"].notna().any()
 
 
 def test_identidades_parte_menor_o_igual_que_total(largo):
@@ -132,9 +130,9 @@ def test_sobreedad_solo_imputada_donde_hay_matricula(ancho):
 
 
 def test_totales_contrastados_con_la_exploracion(ancho):
-    a2011 = ancho[ancho["anio_archivo"] == 2011]
+    a2011 = ancho[ancho["anio"] == 2011]
     assert sum(a2011[f"_{g}"].sum() for g in m.GRADOS) == 8_351_514
-    a2021 = ancho[ancho["anio_archivo"] == 2021]
+    a2021 = ancho[ancho["anio"] == 2021]
     primeros_6 = m.GRADOS[:6]
     tasa = sum(a2021[f"r_{g}"].sum() for g in primeros_6) / sum(
         a2021[f"_{g}"].sum() for g in primeros_6

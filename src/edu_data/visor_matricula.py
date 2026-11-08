@@ -23,7 +23,7 @@ from edu_data.descripcion import (
     tabla_cortes,
 )
 from edu_data.geo import caminos_svg
-from edu_data.matricula import DESFASE_PERIODO, RAIZ, SIN_BA, TOTAL_PAIS, archivos_raw
+from edu_data.matricula import RAIZ, SIN_BA, TOTAL_PAIS, archivos_raw
 
 DESTINO = RAIZ / "outputs" / "visor_matricula.html"
 PLANTILLA = Path(__file__).with_name("visor_matricula.html")
@@ -32,6 +32,16 @@ MARCA = "GENERADO por src/edu_data/visor_matricula.py — editar en src/edu_data
 NIVELES_VISOR = ["inicial", "primaria", "secundaria"]
 CAMPOS = ["matricula", "varones", "mujeres", "pct_repitentes", "pct_sobreedad"]
 CAMPOS_ALERTA = [f"alerta_{i}" for i in INDICADORES_ALERTA]
+# Hechos de un ciclo lectivo que los datos registran en la matrícula siguiente: la repitencia y la
+# sobreedad de un año reflejan cómo cerró el ciclo anterior. El gráfico marca la banda entre ambos
+EVENTOS = [
+    {
+        "etiqueta": "Pandemia",
+        "ciclo": 2020,
+        "registro": 2021,
+        "indicadores": ["repitentes", "sobreedad"],
+    },
+]
 
 
 def clave_corte(sector: str | None, ambito: str | None) -> str:
@@ -76,12 +86,13 @@ def datos_visor(corte: pd.DataFrame, geo: dict, anios: list[int]) -> dict:
         base[campo] = alertas_por_fila(base, base["unidad"], [indicador])
     for (unidad, nivel), grupo in base.groupby(["unidad", "nivel"]):
         salida[unidad]["alertas"][nivel] = _por_anio(grupo, anios, CAMPOS_ALERTA)
-    return {"anios": anios, "unidades": salida, "mapa": geo}
+    eventos = [e for e in EVENTOS if e["ciclo"] in anios and e["registro"] in anios]
+    return {"anios": anios, "unidades": salida, "mapa": geo, "eventos": eventos}
 
 
 def generar(destino: Path = DESTINO, datos: dict | None = None) -> Path:
     if datos is None:
-        anios = [a - DESFASE_PERIODO for a in archivos_raw()]
+        anios = list(archivos_raw())
         datos = datos_visor(cargar_corte(), caminos_svg(), anios)
     # "</" dentro de un <script> cerraría la etiqueta: se escapa
     json_datos = json.dumps(datos, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")

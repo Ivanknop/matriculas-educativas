@@ -37,21 +37,21 @@ def _num(valor: float) -> str:
     [
         (
             ["Santa Cruz"],
-            2019,
-            [("rep", 2018, 0), ("rep", 2019, 1), ("rep", 2024, 0)],
+            2020,
+            [("rep", 2019, 0), ("rep", 2020, 1), ("rep", 2025, 0)],
         ),
         (
             ["Santa Cruz"],
-            2024,
-            [("sob", 2018, 1), ("sob", 2023, 1), ("sob", 2024, 0)],
+            2025,
+            [("sob", 2019, 1), ("sob", 2024, 1), ("sob", 2025, 0)],
         ),
         (
             ["Buenos Aires"],
-            2024,
-            [("rep", 2023, 1), ("rep", 2024, 1), ("sob", 2023, 1), ("sob", 2024, 1)],
+            2025,
+            [("rep", 2024, 1), ("rep", 2025, 1), ("sob", 2024, 1), ("sob", 2025, 1)],
         ),
-        (["Santiago del Estero"], 2010, [("rep", 2010, 1)]),
-        (["Catamarca"], 2011, [("rep", 2011, 1), ("rep", 2010, 1), ("rep", 2012, 1)]),
+        (["Santiago del Estero"], 2011, [("rep", 2011, 1)]),
+        (["Catamarca"], 2012, [("rep", 2012, 1), ("rep", 2011, 1), ("rep", 2013, 1)]),
     ],
 )
 def test_cifras_de_alertas_provinciales(tasas, unidad, periodo, citas):
@@ -61,10 +61,10 @@ def test_cifras_de_alertas_provinciales(tasas, unidad, periodo, citas):
         assert _num(round(valor, decimales)) + " %" in texto, (indicador, anio, valor)
 
 
-def test_cifras_del_quiebre_2016(tasas, base_nivel):
-    texto = _texto(None, 2016)
+def test_cifras_del_quiebre_2017(tasas, base_nivel):
+    texto = _texto(None, 2017)
     pais = d.tabla_nivel(base_nivel).set_index(["nivel", "anio"])["pct_repitentes"]
-    antes, despues = pais[("primaria", 2015)], pais[("primaria", 2016)]
+    antes, despues = pais[("primaria", 2016)], pais[("primaria", 2017)]
     assert f"{antes:.2f} %".replace(".", ",") in texto
     assert f"{despues:.2f} %".replace(".", ",") in texto
     provincias = tasas.drop(index=m.TOTAL_PAIS, level="provincia").xs("primaria", level="nivel")
@@ -73,12 +73,12 @@ def test_cifras_del_quiebre_2016(tasas, base_nivel):
         base_nivel.set_index(["provincia", "nivel", "anio"])["matricula"],
     ).xs("primaria", level="nivel")
     porcentaje = porcentaje.drop(index=m.TOTAL_PAIS, level="provincia").unstack("anio")
-    suben = int(((porcentaje[2016] - porcentaje[2015]) > 0.1).sum())
+    suben = int(((porcentaje[2017] - porcentaje[2016]) > 0.1).sum())
     assert f"{suben} de {len(provincias.index.unique('provincia'))} provincias" in texto
 
 
 def test_peso_de_buenos_aires_citado_en_el_visor(base_nivel):
-    sec = base_nivel[(base_nivel["nivel"] == "secundaria") & (base_nivel["anio"] == 2024)]
+    sec = base_nivel[(base_nivel["nivel"] == "secundaria") & (base_nivel["anio"] == 2025)]
     sec = sec.set_index("provincia")["matricula"]
     peso = 100 * sec[m.PROVINCIA_EXCLUIDA] / sec[m.TOTAL_PAIS]
     assert peso > 40

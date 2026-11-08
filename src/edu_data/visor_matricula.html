@@ -121,6 +121,8 @@ select:disabled { opacity: 0.5; }
 .leyenda { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; margin-top: 4px; }
 .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .leyenda i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.leyenda i.banda { width: 14px; height: 10px; border-radius: 2px; background: var(--surface-2); border: 1px dashed var(--axis); }
+.grafico svg .evento { fill: var(--text-secondary); font-size: 11px; }
 .leyenda i.anillo { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--warning); background: none; }
 .tooltip {
   position: absolute; pointer-events: none; background: var(--surface-1);
@@ -140,7 +142,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 32px; }
 </head>
 <body>
 <main>
-  <h1>Matrícula, repitencia y sobreedad · 2010–2024</h1>
+  <h1>Matrícula, repitencia y sobreedad · 2011–2025</h1>
   <div class="pestanas" role="tablist">
     <button role="tab" id="tab-acerca" aria-controls="acerca" aria-selected="true">Acerca de los datos</button>
     <button role="tab" id="tab-mapa" aria-controls="mapa" aria-selected="false">Mapa</button>
@@ -149,8 +151,8 @@ footer { color: var(--muted); font-size: 12px; margin-top: 32px; }
   <section id="acerca" role="tabpanel" aria-labelledby="tab-acerca" class="acerca">
     <p><strong>Qué es.</strong> Datos del Relevamiento Anual de la Secretaría de Educación: un censo de todas las escuelas de Educación Común, con fecha de captura al 30 de abril de cada año.</p>
     <p><strong>Qué se puede ver.</strong> Para el total del país o una provincia: matrícula (total, varones y mujeres), porcentaje de repitentes y porcentaje de alumnos con sobreedad, por nivel (primaria y secundaria según la estructura de cada provincia) Se puede filtrar por sector (estatal o privado) y ámbito (urbano o rural). El dataset informa sexo solo para la matrícula.</p>
-    <p><strong>Por qué existe "Total país sin Buenos Aires".</strong> Desde 2024 Buenos Aires aplica un nuevo régimen académico en secundaria (Res. 1650/24) que elimina la repitencia en bloque: solo se recuperan las materias desaprobadas. Como la provincia tiene más del 40 % de la matrícula secundaria del país, su cambio arrastra el total nacional; sin ella se ve la tendencia del resto.</p>
-    <p><strong>Cómo leer.</strong> Los años son los del período que informan los datos: cada archivo se publica con el año siguiente (el archivo 2021 informa 2020, como lo muestra la repitencia casi nula de la pandemia). Un anillo amarillo marca un dato con alerta de calidad registrada. Vacío no es cero: sin oferta o sin dato, no se dibuja.</p>
+    <p><strong>Por qué existe "Total país sin Buenos Aires".</strong> Desde el ciclo 2024 Buenos Aires aplica un nuevo régimen académico en secundaria (Res. 1650/24) que elimina la repitencia en bloque: solo se recuperan las materias desaprobadas. Se ve en los datos desde 2025. Como la provincia tiene más del 40 % de la matrícula secundaria del país, su cambio arrastra el total nacional; sin ella se ve la tendencia del resto.</p>
+    <p><strong>Cómo leer.</strong> Cada año es el de la matrícula: los inscriptos de ese ciclo lectivo, al 30 de abril. Los repitentes y la sobreedad son de esos inscriptos, pero reflejan cómo terminó el ciclo anterior. Por eso la pandemia (ciclo 2020, con promoción acompañada) recién se ve en la matrícula 2021: el gráfico la marca con una banda. Un anillo amarillo marca un dato con alerta de calidad registrada. Vacío no es cero: sin oferta o sin dato, no se dibuja.</p>
     <a class="ir-mapa" href="#mapa">Ir al mapa</a>
   </section>
 
@@ -281,7 +283,7 @@ function renderPanel() {
   let titulo = ind.titulo + (conSexo && estado.sexo !== "matricula" ? " · " + SEXOS[estado.sexo].toLowerCase() : "");
   const recorte = [estado.sector !== "Todos" ? estado.sector.toLowerCase() : null, estado.ambito !== "Todos" ? estado.ambito.toLowerCase() : null].filter(Boolean);
   if (recorte.length) titulo += " · " + recorte.join(", ");
-  panel.appendChild(grafico({ titulo, campo, pct: ind.pct, niveles: ind.niveles, alerta: ind.alerta, conSexo: conSexo && estado.sexo === "matricula" }, corte.nivel, u.alertas));
+  panel.appendChild(grafico({ titulo, campo, indicador: estado.indicador, pct: ind.pct, niveles: ind.niveles, alerta: ind.alerta, conSexo: conSexo && estado.sexo === "matricula" }, corte.nivel, u.alertas));
 
   const alertas = new Map();
   for (const n of ind.niveles) (u.alertas[n]?.[ind.alerta] ?? []).forEach((t, i) => {
@@ -322,7 +324,8 @@ function abreviar(v, pct) {
 function grafico(def, nivel, alertasUnidad) {
   const cont = htmlEl("div", { className: "grafico" });
   htmlEl("h3", { textContent: def.titulo }, cont);
-  const W = 640, H = 260, m = { t: 10, r: 84, b: 24, l: 56 };
+  const eventos = DATOS.eventos.filter(e => e.indicadores.includes(def.indicador));
+  const W = 640, H = 260, m = { t: eventos.length ? 26 : 10, r: 84, b: 24, l: 56 };
   const series = def.niveles.filter(n => nivel[n]).map(n => ({
     nivel: n, ...SERIES[n],
     puntos: ANIOS.map((a, i) => ({
@@ -342,6 +345,12 @@ function grafico(def, nivel, alertasUnidad) {
     svgEl("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = abreviar(v, def.pct);
   }
   for (const a of ANIOS.filter(a => a % 2 === 1)) svgEl("text", { x: x(a), y: H - 6, "text-anchor": "middle" }, svg).textContent = a;
+  // Banda del ciclo del hecho al año en que lo registra la matrícula; va debajo de las líneas
+  for (const e of eventos) {
+    svgEl("rect", { x: x(e.ciclo), y: m.t, width: x(e.registro) - x(e.ciclo), height: H - m.t - m.b, fill: "var(--surface-2)" }, svg);
+    svgEl("line", { x1: x(e.registro), x2: x(e.registro), y1: m.t, y2: H - m.b, stroke: "var(--axis)", "stroke-width": 1, "stroke-dasharray": "3 3" }, svg);
+    svgEl("text", { x: (x(e.ciclo) + x(e.registro)) / 2, y: m.t - 8, "text-anchor": "middle", class: "evento" }, svg).textContent = `${e.etiqueta}: ciclo ${e.ciclo} → se registra en ${e.registro}`;
+  }
 
   const etiquetas = [];
   for (const s of series) {
@@ -370,6 +379,10 @@ function grafico(def, nivel, alertasUnidad) {
   for (const s of series) {
     const sp = htmlEl("span", {}, leyenda), i = htmlEl("i", {}, sp);
     i.style.background = s.color; sp.appendChild(document.createTextNode(s.etiqueta));
+  }
+  for (const e of eventos) {
+    const sp = htmlEl("span", {}, leyenda); htmlEl("i", { className: "banda" }, sp);
+    sp.appendChild(document.createTextNode(`${e.etiqueta.toLowerCase()}: el ciclo ${e.ciclo} se ve en la matrícula ${e.registro}`));
   }
   if (series.some(s => s.puntos.some(p => p.alerta && p.valor != null))) {
     const sp = htmlEl("span", {}, leyenda); htmlEl("i", { className: "anillo" }, sp);

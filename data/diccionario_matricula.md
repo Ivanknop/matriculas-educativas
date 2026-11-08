@@ -5,17 +5,18 @@
   Educativa, Secretaría de Educación (Ministerio de Capital Humano). Es un **censo** de todos los
   establecimientos: no hay muestra ni ponderador.
 - **Archivos:** `data/raw/AAAA Matricula - agregada.csv`, archivos 2011 a 2025 (15 archivos).
-- **Período que informa: el año anterior al del archivo** (archivo 2021 → período 2020). Así lo
-  estableció el desarrollador y se codifica como `DESFASE_PERIODO = 1` en
-  `src/edu_data/matricula.py`. En todo el pipeline, tablas y visor, `anio` es el **período**; el
-  año del nombre queda en `anio_archivo` (formato ancho). Serie de períodos: **2010 a 2024**.
-  - Evidencia 1, pandemia: la repitencia casi nula de 2020 (promoción acompañada) está en el
-    **archivo 2021**: primaria 0,67 % y secundaria 1,72 %, contra 2,49 % y 8,31 % en el archivo
-    2020.
-  - Evidencia 2, Buenos Aires: la Res. 1650/24, que rige desde 2024, se ve en el **archivo 2025**.
-  - Matiz a tener presente: el documento metodológico oficial habla de "fecha única de captura al
-    30 de abril de cada año". Se adopta igualmente el desfase para toda la base (matrícula,
-    sobreedad y secciones incluidas), así los porcentajes se calculan dentro de un mismo archivo.
+- **Año: el del archivo = ciclo lectivo de la matrícula** (inscriptos al 30 de abril, fecha
+  única de captura según el documento metodológico). Serie: **2011 a 2025**. En todo el
+  pipeline, tablas y visor, `anio` es el año del archivo. Decisión del desarrollador (corrige un
+  desfase de un año que se había aplicado antes a toda la base).
+  - **Repitentes y sobreedad** son de los inscriptos de ese año, pero **reflejan cómo terminó el
+    ciclo anterior**: quien no promovió en el ciclo t−1 aparece como repitente en la matrícula
+    de t.
+  - Evidencia, pandemia: la promoción acompañada del ciclo 2020 se ve recién en la **matrícula
+    2021**: repitencia de primaria 0,67 % y de secundaria 1,72 %, contra 2,49 % y 8,31 % en
+    2020. El visor lo marca con una banda entre 2020 y 2021 (`EVENTOS` en
+    `src/edu_data/visor_matricula.py`).
+  - Evidencia, Buenos Aires: la Res. 1650/24 rige en el ciclo 2024 y se ve en la matrícula 2025.
   - **Repitentes**: alumnos que cursan por segunda vez el año en el que están inscriptos.
 - **Documentos de referencia** (en `data/raw/`, los baja `edu_data.descarga`):
   `Diccionario de bases RA anonimizadas.xlsx`, hoja "Matricula", y
@@ -44,7 +45,7 @@
 | `provincia` | Jurisdicción | texto | 24 jurisdicciones (incluye "Ciudad de Buenos Aires") | Sin códigos |
 | `departamento` | Departamento / partido / comuna | texto | Nombre; "Enmascarado" | Ver abajo |
 | `sector` | Sector de gestión | texto | Estatal, Privado | |
-| `ambito` | Ámbito | texto | Urbano, Rural | 1 fila vacía (período 2020) |
+| `ambito` | Ámbito | texto | Urbano, Rural | 1 fila vacía (2021) |
 
 **"Enmascarado"** (unas 67 filas por año): por secreto estadístico (Ley 17.622) se fusionan en
 una fila por provincia, sector y ámbito los departamentos con 3 localizaciones o menos. No afecta
@@ -56,7 +57,7 @@ los totales provinciales ni el del país.
 | `lactantes`, `deambulantes`, `s2`…`s5` | Matrícula de nivel inicial por sala | entero | alumnos | diccionario oficial |
 | `_1`…`_12` | Matrícula por **año corrido**: años de estudio numerados de forma continua desde 1º de primaria hasta el último de secundaria | entero | alumnos | diccionario oficial; "año corrido" interpretado |
 | `_1314` | "Matrícula _1314 año corrido" | entero | alumnos | diccionario oficial. **Significado pendiente** (ver Pendientes) |
-| `_20` | Matrícula de **organización no graduada**: alumnos sin asignación a un año de estudio (cursada por módulos o trayectos). Existe desde el período 2022 (archivo 2023) | entero | alumnos | diccionario oficial |
+| `_20` | Matrícula de **organización no graduada**: alumnos sin asignación a un año de estudio (cursada por módulos o trayectos). Existe desde 2023 | entero | alumnos | diccionario oficial |
 | `_snu` | Matrícula del **Superior No Universitario** (profesorados, tecnicaturas superiores) | entero | alumnos | diccionario oficial. **Fuera del alcance** |
 | `v_<grado>` | Varones matriculados | entero | alumnos | diccionario oficial |
 | `r_<grado>` | Repitentes | entero | alumnos | diccionario oficial |
@@ -105,18 +106,18 @@ El archivo no trae nivel. Se asigna por grado y por la estructura de primaria de
   formato largo, la fila no existe.
 - **Sobreedad vacía con matrícula presente = 0** (decisión del usuario). Evidencia: la fuente no
   escribe ningún 0 de sobreedad en 15 años, y estos vacíos crecen a medida que baja la sobreedad
-  (171 celdas en 2010, 2.175 en 2024). El original queda en `s_<grado>_informado` (ancho) y
+  (171 celdas en 2011, 2.175 en 2025). El original queda en `s_<grado>_informado` (ancho) y
   `sobreedad_informado` (largo); `sobreedad_imputada` marca la celda. En total: 15.992 de 220.032
   celdas de primaria y secundaria, con el 1,6 % de la matrícula.
 - **Sobreedad vacía sin matrícula:** queda NA.
-- Columnas que no existen en un año (`_20` antes del período 2022): NA, no 0.
+- Columnas que no existen en un año (`_20` antes de 2023): NA, no 0.
 
 ## Diferencias entre períodos
-| Archivo (período) | Cambio |
+| Archivo | Cambio |
 |---|---|
-| 2023 (2022) | Aparecen `_20`, `v_20`, `r_20`, `_sec20` (organización no graduada) |
-| 2024 (2023) | `Departamento` con mayúscula (se normaliza); aparece `localizacion` (se descarta) |
-| 2025 (2024) | Vuelve al esquema del archivo 2023 |
+| 2023 | Aparecen `_20`, `v_20`, `r_20`, `_sec20` (organización no graduada) |
+| 2024 | `Departamento` con mayúscula (se normaliza); aparece `localizacion` (se descarta) |
+| 2025 | Vuelve al esquema del archivo 2023 |
 
 ## Base procesada (`uv run python -m edu_data.construir_todo`)
 `matricula_corte` se arma desde el formato largo; `matricula_nivel` y `matricula_grado` se
@@ -142,29 +143,29 @@ Fuentes del visor: `src/edu_data/visor_matricula.py` (datos) y `visor_matricula.
 ## Calidad
 Alertas revisadas en `src/edu_data/alertas.py`; controles en `outputs/validacion_matricula_*.csv`
 (`uv run python -m edu_data.validar_matricula`).
-- **2020, todo el país:** shock de la pandemia en repitencia y sobreedad (real).
-- **2016, todo el país:** la repitencia de primaria sube de 2,15 % a 3,16 % (2º a 6º a la vez)
+- **2021, todo el país:** efecto de la pandemia (ciclo 2020) en repitencia y sobreedad (real).
+- **2017, todo el país:** la repitencia de primaria sube de 2,15 % a 3,16 % (2º a 6º a la vez)
   y la de 12º se duplica, en 21 de 24 provincias, y el nivel se mantiene. Posible cambio de
   criterio del relevamiento; a confirmar con el Anuario.
-- **Santiago del Estero 2010, secundaria:** repitencia 2,4 % y matrícula 9 % por debajo de 2011.
-- **Catamarca 2011, secundaria:** la matrícula cae 11 % y rebota 7 % al año siguiente.
-- **Santa Cruz 2019–2023, secundaria:** repitencia 0 %; sobreedad de 39,5 % a 7,8 % y rebote en
-  2024.
-- **Buenos Aires 2024, secundaria — cambio normativo, no error.** La Resolución 1650/24
+- **Santiago del Estero 2011, secundaria:** repitencia 2,4 % y matrícula 9 % por debajo de 2012.
+- **Catamarca 2012, secundaria:** la matrícula cae 11 % y rebota 7 % al año siguiente.
+- **Santa Cruz 2020–2024, secundaria:** repitencia 0 %; sobreedad de 39,5 % a 7,8 % y rebote en
+  2025. Empieza antes del efecto de la pandemia (2021).
+- **Buenos Aires 2025, secundaria — cambio normativo, no error.** La Resolución 1650/24
   (nuevo régimen académico) elimina la repitencia en bloque: solo se recuperan las materias
-  desaprobadas. Rige desde 2024 y el efecto aparece en el período 2024 (archivo 2025), lo que
-  confirma el desfase de un año entre archivo y período. La repitencia baja de 6,2 % a 2,5 % y la
+  desaprobadas. Rige en el ciclo 2024 y el efecto aparece en la matrícula 2025, porque los
+  repitentes reflejan el cierre del ciclo anterior. La repitencia baja de 6,2 % a 2,5 % y la
   sobreedad de 19,9 % a 15,5 %, en buena parte porque hay menos repitentes nuevos, que casi
-  siempre tienen sobreedad. Desde 2024 la repitencia de Buenos Aires no es comparable con los
+  siempre tienen sobreedad. Desde 2025 la repitencia de Buenos Aires no es comparable con los
   años anteriores, y como la provincia es casi el 42 % de la secundaria del país, tampoco lo
   es el total país.
-- **`_sec20` 2023–2024:** alumnos de organización no graduada con 0 secciones.
-- **Santa Fe 2021–2024, secundaria — revisada, coherente (sin alerta).** La repitencia pasa de
-  7,5 % (2021) a 15,5 % (2024), por encima de la mediana (11,8 %). La suba se ve en 9º a 11º
-  (de 12 % a 20 %), se concentra en el sector estatal (20,2 % en 2024) y la sobreedad la
+- **`_sec20` 2024–2025:** alumnos de organización no graduada con 0 secciones.
+- **Santa Fe 2022–2025, secundaria — revisada, coherente (sin alerta).** La repitencia pasa de
+  7,5 % (2022) a 15,5 % (2025), por encima de la mediana (11,8 %). La suba se ve en 9º a 11º
+  (de 12 % a 20 %), se concentra en el sector estatal (20,2 % en 2025) y la sobreedad la
   acompaña (de 21,1 % a 26,4 %): dinámica real, no un problema de carga.
-- Los atípicos de 2010–2012 en primaria son el comienzo de una tendencia descendente (unidad
-  pedagógica 1º–2º: repitencia de 1º de 6,7 % a 0,7 % entre 2010 y 2014), no errores.
+- Los atípicos de 2011–2013 en primaria son el comienzo de una tendencia descendente (unidad
+  pedagógica 1º–2º: repitencia de 1º de 6,7 % a 0,7 % entre 2011 y 2015), no errores.
 
 ## Pendientes
 - **`_1314`:** el diccionario dice "Matrícula _1314 año corrido". Hipótesis: años 13 y 14 de
@@ -173,4 +174,4 @@ Alertas revisadas en `src/edu_data/alertas.py`; controles en `outputs/validacion
 - **`localizacion` (archivo 2024):** confirmar qué es; hoy se descarta.
 - **Hipótesis sin confirmar:** que `_20` corresponda a programas de reingreso o terminalidad
   (p. ej. PIT 14-17 en Córdoba).
-- **Causa de las alertas** de Santa Cruz (¿cambio de régimen académico?) y del quiebre de 2016.
+- **Causa de las alertas** de Santa Cruz (¿cambio de régimen académico?) y del quiebre de 2017.

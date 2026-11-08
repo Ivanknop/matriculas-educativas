@@ -11,7 +11,7 @@ from edu_data import matricula as m
 from edu_data import visor_matricula as v
 
 pytestmark = pytest.mark.skipif(not geo.ARCHIVO.exists(), reason="falta provincias_georef.geojson")
-ANIOS = list(range(2010, 2025))
+ANIOS = list(range(2011, 2026))
 
 
 @pytest.fixture(scope="module")
@@ -56,18 +56,18 @@ def test_unidades_del_selector(datos):
 @pytest.mark.parametrize(
     ("unidad", "provincias", "sector", "ambito", "nivel", "anio"),
     [
-        (m.TOTAL_PAIS, None, None, None, "secundaria", 2024),
+        (m.TOTAL_PAIS, None, None, None, "secundaria", 2025),
         (
             d.SIN_BA,
             sorted((m.PRIMARIA_6 | m.PRIMARIA_7) - {"Buenos Aires"}),
             None,
             None,
             "secundaria",
-            2024,
+            2025,
         ),
-        ("Salta", ["Salta"], "Estatal", "Rural", "secundaria", 2018),
-        ("Córdoba", ["Córdoba"], "Privado", "Urbano", "primaria", 2024),
-        ("Ciudad de Buenos Aires", ["Ciudad de Buenos Aires"], "Estatal", None, "primaria", 2012),
+        ("Salta", ["Salta"], "Estatal", "Rural", "secundaria", 2019),
+        ("Córdoba", ["Córdoba"], "Privado", "Urbano", "primaria", 2025),
+        ("Ciudad de Buenos Aires", ["Ciudad de Buenos Aires"], "Estatal", None, "primaria", 2013),
     ],
 )
 def test_corte_contra_ancho(ancho, datos, unidad, provincias, sector, ambito, nivel, anio):
@@ -114,8 +114,8 @@ def test_alertas_por_unidad(datos):
     sin_ba = datos["unidades"][d.SIN_BA]["alertas"]["secundaria"]
     assert sin_ba["alerta_repitentes"][-1] is None
     santa_cruz = datos["unidades"]["Santa Cruz"]["alertas"]["secundaria"]
-    assert "Santa Cruz" not in santa_cruz["alerta_repitentes"][ANIOS.index(2021)]
-    assert santa_cruz["alerta_repitentes"][ANIOS.index(2021)]
+    assert "Santa Cruz" not in santa_cruz["alerta_repitentes"][ANIOS.index(2022)]
+    assert santa_cruz["alerta_repitentes"][ANIOS.index(2022)]
 
 
 def test_mapa_tiene_todas_las_provincias(datos):
@@ -132,3 +132,13 @@ def test_html_generado(tmp_path, datos):
     assert "Ir al mapa" in html and "1650/24" in html
     bloque = re.search(r'<script id="datos" type="application/json">(.*?)</script>', html, re.S)
     assert len(json.loads(bloque.group(1))["unidades"]) == 26
+
+
+def test_banda_de_la_pandemia_marca_el_minimo_de_repitencia(datos):
+    (evento,) = datos["eventos"]
+    assert (evento["ciclo"], evento["registro"]) == (2020, 2021)
+    # Lo que dice la banda: la repitencia mínima está en la matrícula 2021, no en la de 2020
+    niveles = datos["unidades"][m.TOTAL_PAIS]["cortes"][v.clave_corte(None, None)]["nivel"]
+    for nivel in ["primaria", "secundaria"]:
+        serie = niveles[nivel]["pct_repitentes"]
+        assert ANIOS[serie.index(min(serie))] == evento["registro"], nivel

@@ -19,10 +19,9 @@ DIR_RAW = RAIZ / "data" / "raw"
 DIR_PROCESSED = RAIZ / "data" / "processed"
 PATRON_ARCHIVO = re.compile(r"^(\d{4}) Matricula - agregada\.csv$")
 
-# Cada archivo informa el período anterior al año de su nombre (decisión del usuario). Evidencia:
-# la repitencia casi nula de la pandemia (2020) está en el archivo 2021, y la Res. 1650/24 de
-# Buenos Aires (2024) se ve en el archivo 2025. En todo el pipeline `anio` es el período.
-DESFASE_PERIODO = 1
+# `anio` = año del archivo = ciclo lectivo de la matrícula (inscriptos al 30 de abril).
+# Repitentes y sobreedad son de esos inscriptos, pero reflejan cómo cerró el ciclo anterior:
+# la promoción acompañada de 2020 recién se ve en 2021. Detalle: data/diccionario_matricula.md
 
 DIMENSIONES = ["provincia", "departamento", "sector", "ambito"]
 # Solo viene en 2024 y no figura en el diccionario: se descarta (decisión del usuario)
@@ -73,7 +72,7 @@ MEDIDAS = ["matricula", "varones", "mujeres", "repitentes", "sobreedad"]
 IMPUTADAS = "celdas_sobreedad_imputadas"
 CORTE = ["sector", "ambito", "nivel", "grado", "grado_orden"]
 TOTAL_PAIS = "Total país"
-# Única provincia que se excluye en un total: su régimen académico cambia desde 2024
+# Única provincia que se excluye en un total: cambia su régimen académico (ciclo 2024)
 PROVINCIA_EXCLUIDA = "Buenos Aires"
 SIN_BA = f"{TOTAL_PAIS} sin {PROVINCIA_EXCLUIDA}"
 
@@ -137,7 +136,7 @@ def _leer_en_paralelo(rutas: list[Path]) -> list[pd.DataFrame]:
 def leer_serie(directorio: Path = DIR_RAW) -> pd.DataFrame:
     """Todos los años en formato ancho, con esquema común (columnas ausentes → NA).
 
-    `anio` = período que informa; `anio_archivo` = año del nombre del archivo.
+    `anio` = año del archivo (ciclo lectivo de la matrícula).
     """
     rutas = archivos_raw(directorio)
     if not rutas:
@@ -145,16 +144,11 @@ def leer_serie(directorio: Path = DIR_RAW) -> pd.DataFrame:
     dfs = dict(zip(rutas, _leer_en_paralelo(list(rutas.values())), strict=True))
     unificados = unificar_esquema(dfs)
     serie = pd.concat(
-        [
-            df.assign(anio=archivo - DESFASE_PERIODO, anio_archivo=archivo)
-            for archivo, df in unificados.items()
-        ],
-        ignore_index=True,
+        [df.assign(anio=archivo) for archivo, df in unificados.items()], ignore_index=True
     )
     ausentes = {archivo: df.attrs["columnas_ausentes"] for archivo, df in unificados.items()}
     serie.attrs["columnas_ausentes"] = ausentes
-    primeras = ["anio", "anio_archivo"]
-    return serie[[*primeras, *[c for c in serie.columns if c not in primeras]]]
+    return serie[["anio", *[c for c in serie.columns if c != "anio"]]]
 
 
 def nivel_de(grado: str, provincia: pd.Series) -> pd.Series:

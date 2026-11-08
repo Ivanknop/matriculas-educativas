@@ -35,7 +35,7 @@ def _valor(tabla, anio, columna, **filtros):
     return fila[columna].iloc[0]
 
 
-@pytest.mark.parametrize("anio", [2010, 2016, 2020, 2024])
+@pytest.mark.parametrize("anio", [2011, 2017, 2021, 2025])
 @pytest.mark.parametrize("nivel", ["primaria", "secundaria"])
 def test_porcentajes_por_nivel(ancho, tablas, anio, nivel):
     tn, _ = tablas
@@ -50,19 +50,19 @@ def test_porcentajes_por_nivel(ancho, tablas, anio, nivel):
 
 def test_matricula_inicial_y_no_graduada(ancho, tablas):
     tn, _ = tablas
-    a2024 = ancho[ancho["anio"] == 2024]
-    assert _valor(tn, 2024, "matricula", nivel="inicial") == sum(
-        int(a2024[s].sum()) for s in m.SALAS
+    a2025 = ancho[ancho["anio"] == 2025]
+    assert _valor(tn, 2025, "matricula", nivel="inicial") == sum(
+        int(a2025[s].sum()) for s in m.SALAS
     )
-    assert _valor(tn, 2024, "matricula", nivel="no_graduada") == 9112
-    # Antes de 2022 la columna no existe: no hay fila (no es 0)
-    assert tn[(tn["nivel"] == "no_graduada") & (tn["anio"] < 2022)].empty
-    assert pd.isna(_valor(tn, 2024, "pct_repitentes", nivel="inicial"))
+    assert _valor(tn, 2025, "matricula", nivel="no_graduada") == 9112
+    # Antes de 2023 la columna no existe: no hay fila (no es 0)
+    assert tn[(tn["nivel"] == "no_graduada") & (tn["anio"] < 2023)].empty
+    assert pd.isna(_valor(tn, 2025, "pct_repitentes", nivel="inicial"))
 
 
 @pytest.mark.parametrize(
     ("anio", "grado", "rep", "sob"),
-    [(2010, "1", 6.74, 11.11), (2018, "8", 13.49, 30.92), (2024, "12", 1.73, 16.56)],
+    [(2011, "1", 6.74, 11.11), (2019, "8", 13.49, 30.92), (2025, "12", 1.73, 16.56)],
 )
 def test_porcentajes_por_grado(ancho, tablas, anio, grado, rep, sob):
     _, tg = tablas
@@ -77,14 +77,14 @@ def test_porcentajes_por_grado(ancho, tablas, anio, grado, rep, sob):
 
 def test_alertas_marcadas_en_total(tablas):
     tn, _ = tablas
-    assert "Pandemia" in _valor(tn, 2020, "alerta", nivel="secundaria")
-    assert "Quiebre" in _valor(tn, 2016, "alerta", nivel="primaria")
-    assert "6,2 %" in _valor(tn, 2024, "alerta", nivel="secundaria")
+    assert "pandemia" in _valor(tn, 2021, "alerta", nivel="secundaria")
+    assert "Quiebre" in _valor(tn, 2017, "alerta", nivel="primaria")
+    assert "6,2 %" in _valor(tn, 2025, "alerta", nivel="secundaria")
     # Alertas provinciales sin afecta_total no aparecen en el total país
-    assert "Santa Cruz" not in str(_valor(tn, 2021, "alerta", nivel="secundaria"))
+    assert "Santa Cruz" not in str(_valor(tn, 2022, "alerta", nivel="secundaria"))
 
 
-@pytest.mark.parametrize(("anio", "rep", "sob"), [(2023, 7.84, 22.16), (2024, 8.44, 22.33)])
+@pytest.mark.parametrize(("anio", "rep", "sob"), [(2024, 7.84, 22.16), (2025, 8.44, 22.33)])
 def test_secundaria_sin_buenos_aires(ancho, corte, anio, rep, sob):
     t = d.tabla_nivel(d.sumar_corte(corte, m.SIN_BA, ["nivel"]), m.SIN_BA)
     resto = ancho[ancho["provincia"] != "Buenos Aires"]

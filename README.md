@@ -1,6 +1,6 @@
 # Repitencia y sobreedad en la Educación Común argentina
 
-Descripción estructural de la matrícula de Educación Común en Argentina entre 2010 y 2024, con
+Descripción estructural de la matrícula de Educación Común en Argentina entre 2011 y 2025, con
 foco en la **repitencia** y la **sobreedad**. Es un trabajo descriptivo: muestra niveles y
 evolución, sin modelar causas.
 
@@ -14,9 +14,10 @@ evolución, sin modelar causas.
 ## Datos
 - **Origen:** Relevamiento Anual de la Secretaría de Educación, un censo de todas las escuelas
   (no tiene muestra ni ponderadores).
-- **Período:** cada archivo informa el año anterior al de su nombre. Los archivos 2011–2025
-  cubren los períodos 2010–2024. Se comprobó con la pandemia, cuya repitencia casi nula de 2020
-  está en el archivo 2021.
+- **Año:** el de cada archivo, que es el ciclo lectivo de la matrícula (inscriptos al 30 de
+  abril). Repitentes y sobreedad son de esos inscriptos, pero reflejan cómo terminó el ciclo
+  anterior: la promoción acompañada de la pandemia (ciclo 2020) recién se ve en 2021, y el
+  visor lo marca.
 - **Unidad:** cada fila es un agregado de provincia × departamento × sector × ámbito, no una
   escuela ni un alumno.
 - **Nivel:** el archivo no lo trae. Se asigna por año de estudio y por la estructura de
@@ -27,12 +28,12 @@ evolución, sin modelar causas.
 - **Sobreedad:** la fuente nunca escribe 0. Un vacío donde hay matrícula se toma como 0 y se
   conserva el valor original.
 - **Vacío no es cero:** un grado sin matrícula es un grado sin oferta y queda vacío, no en 0.
-- **Total país sin Buenos Aires:** desde 2024 Buenos Aires aplica un nuevo régimen académico en
+- **Total país sin Buenos Aires:** desde el ciclo 2024 (datos 2025) Buenos Aires aplica un nuevo régimen académico en
   secundaria (Res. 1650/24) sin repitencia en bloque. Como la provincia pesa mucho en el total,
   esta serie muestra la tendencia del resto del país.
-- **Alertas de calidad:** hay quiebres y datos dudosos revisados, entre ellos la pandemia (2020),
-  un posible cambio de criterio nacional en la repitencia (2016) y la repitencia nula de la
-  secundaria de Santa Cruz (2019–2023). Están en `src/edu_data/alertas.py` y el visor las marca.
+- **Alertas de calidad:** hay quiebres y datos dudosos revisados, entre ellos el efecto de la
+  pandemia (2021), un posible cambio de criterio nacional en la repitencia (2017) y la repitencia
+  nula de la secundaria de Santa Cruz (2020–2024). Están en `src/edu_data/alertas.py` y el visor las marca.
 - **Fuera del alcance:** el nivel superior no universitario y la organización no graduada.
 
 Detalle de variables, decisiones y alertas en
