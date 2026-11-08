@@ -1,0 +1,34 @@
+# Datos: no se versionan (solo la estructura y el catálogo)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+outputs/*
+!outputs/.gitkeep
+# Crudos versionados: datos abiertos y livianos (~6 MB), insumo de la CI que publica el visor
+!data/raw/*.csv
+!data/raw/*.geojson
+!data/raw/*.xlsx
+!data/raw/*.pdf
+
+# Certificados
+.devcontainer/certs/*.crt
+.devcontainer/certs/*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+# Plantilla: cada proyecto derivado versiona su propio lock
+
+# Secrets y configuración local de Claude
+.env
+.env.*
+.claude/settings.local.json
+
+# SO / editores
+.DS_Store
+Thumbs.db

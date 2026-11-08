@@ -1,0 +1,12 @@
+# Forzar LF: si Git en Windows convierte los .sh a CRLF, el contenedor no los puede ejecutar
+* text=auto eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.parquet binary
+*.xlsx binary
+*.xls binary
+*.sav binary
+*.dta binary
+
+# Crudos byte a byte: los oficiales suelen venir con CRLF y latin-1; normalizarlos los alteraría
+data/raw/** -text -eol

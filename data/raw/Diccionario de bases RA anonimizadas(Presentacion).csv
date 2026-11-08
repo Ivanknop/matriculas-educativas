@@ -1,0 +1,11 @@
+Se presenta a continuación el detalle de bases usuarias de las principales unidades de análisis relevadas, y la composición de las mismas, indicando nombre, tipo, longitud y contenido de cada una de las variables.
+
+
+Índice de Bases de Datos y Tablas
+1.1 Base matrícula. Educación Común. Matrícula total y por sexo, Repetidores, Alumnos con Sobreedad y Secciones, por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.
+1.2 Base Trayectoria. Educación Común. Alumnos Promovidos, No Promovidos y Salidos con y sin pase por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.
+1.3 Base Cargos y Horas docentes por ID. Educación Común. Cargos y Horas Cátedra, según tipo, por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.
+1.4 Base Cargos y Horas docentes por tipo. Educación Común. Cargos, Horas Cátedra y módulos, según tipo, planta, por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.
+1.5 Base Características del Establecimiento. Educación Común. Servicios, Equipamiento, Conectividad y Características organizativas, por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.
+1.6 Base Población. Educación Común. Matrícula indígena, Enseñanza de idiomas, Alumnos extranjeros, Alimentación y Discapacidad, por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.
+1.7 Base matrícula por edad. Educación Común. Matrícula por edad y sección, por Establecimiento, Jurisdicción, Sector de Gestión, Ámbito y departamento.

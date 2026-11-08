@@ -1,0 +1,424 @@
+<!doctype html>
+<!-- __MARCA__ -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visor de matrícula</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #f0efec;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --prov: #e1e0d9;
+  --prov-hover: #9ec5f4;
+  --accent: #2a78d6;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --warning: #fab219;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --surface-2: #2c2c2a;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --prov: #383835;
+    --prov-hover: #1c5cab;
+    --accent: #3987e5;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #2c2c2a;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --prov: #383835;
+  --prov-hover: #1c5cab;
+  --accent: #3987e5;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--text-primary);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 12px; }
+h2 { font-size: 17px; margin: 0 0 8px; }
+h3 { font-size: 14px; margin: 20px 0 6px; }
+button { font: inherit; cursor: pointer; }
+.pestanas { display: flex; gap: 4px; border-bottom: 1px solid var(--axis); margin-bottom: 20px; }
+.pestanas button {
+  background: none; border: none; padding: 8px 14px; color: var(--text-secondary);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.pestanas button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--accent); font-weight: 600; }
+.acerca { max-width: 720px; }
+.acerca p, .acerca li { color: var(--text-secondary); }
+.acerca strong { color: var(--text-primary); }
+.ir-mapa {
+  display: inline-block; margin-top: 12px; padding: 10px 18px; border-radius: 8px;
+  background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
+}
+.mapa-layout { display: grid; grid-template-columns: minmax(260px, 380px) 1fr; gap: 20px; align-items: start; }
+@media (max-width: 820px) { .mapa-layout { grid-template-columns: 1fr; } .mapa-col svg { max-height: 70vh; } }
+.tarjeta { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.totales { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.chip {
+  border: 1px solid var(--axis); background: var(--surface-1); color: var(--text-primary);
+  border-radius: 999px; padding: 5px 12px; font-size: 13px;
+}
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ayuda { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+.mapa-col svg { width: 100%; height: auto; display: block; }
+.prov { fill: var(--prov); stroke: var(--surface-1); stroke-width: 0.8; cursor: pointer; outline: none; }
+.prov:hover, .prov:focus-visible { fill: var(--prov-hover); }
+.prov.activa { fill: var(--accent); }
+.recuadro { fill: none; stroke: var(--axis); stroke-width: 1; stroke-dasharray: 3 2; }
+.guia-caba { stroke: var(--muted); stroke-width: 0.8; }
+.mapa-col svg text { fill: var(--text-secondary); font-size: 10px; }
+.segmentos { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; margin: 6px 0 10px; }
+.segmentos button { background: var(--surface-1); color: var(--text-primary); border: none; padding: 7px 16px; border-right: 1px solid var(--axis); }
+.segmentos button:last-child { border-right: none; }
+.segmentos button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.filtros { display: flex; gap: 14px; flex-wrap: wrap; align-items: end; margin-bottom: 10px; }
+.filtros label { display: flex; flex-direction: column; font-size: 12px; color: var(--text-secondary); gap: 3px; }
+select {
+  font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--axis);
+  background: var(--surface-1); color: var(--text-primary); min-width: 120px;
+}
+select:disabled { opacity: 0.5; }
+.nota-sexo { font-size: 12px; color: var(--muted); }
+.vacio { color: var(--muted); padding: 24px 0; }
+.grafico { position: relative; }
+.grafico svg { width: 100%; height: auto; display: block; overflow: visible; }
+.grafico svg text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.grafico svg .etiqueta { fill: var(--text-secondary); }
+.leyenda { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; margin-top: 4px; }
+.leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.leyenda i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+.leyenda i.anillo { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--warning); background: none; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); min-width: 170px; max-width: 290px; display: none; z-index: 2;
+}
+.tooltip .anio { color: var(--text-secondary); margin-bottom: 4px; }
+.tooltip .fila { display: flex; align-items: center; gap: 8px; }
+.tooltip .fila b { font-variant-numeric: tabular-nums; }
+.tooltip .fila i { width: 12px; height: 2px; display: inline-block; flex: none; }
+.tooltip .sexo { color: var(--text-secondary); margin: 0 0 3px 20px; font-variant-numeric: tabular-nums; }
+.tooltip .alerta { margin-top: 6px; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 6px; }
+ul.alertas { padding-left: 18px; color: var(--text-secondary); margin: 4px 0; }
+footer { color: var(--muted); font-size: 12px; margin-top: 32px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Matrícula, repitencia y sobreedad · 2010–2024</h1>
+  <div class="pestanas" role="tablist">
+    <button role="tab" id="tab-acerca" aria-controls="acerca" aria-selected="true">Acerca de los datos</button>
+    <button role="tab" id="tab-mapa" aria-controls="mapa" aria-selected="false">Mapa</button>
+  </div>
+
+  <section id="acerca" role="tabpanel" aria-labelledby="tab-acerca" class="acerca">
+    <p><strong>Qué es.</strong> Datos del Relevamiento Anual de la Secretaría de Educación: un censo de todas las escuelas de Educación Común, con fecha de captura al 30 de abril de cada año.</p>
+    <p><strong>Qué se puede ver.</strong> Para el total del país o una provincia: matrícula (total, varones y mujeres), porcentaje de repitentes y porcentaje de alumnos con sobreedad, por nivel (primaria y secundaria según la estructura de cada provincia) Se puede filtrar por sector (estatal o privado) y ámbito (urbano o rural). El dataset informa sexo solo para la matrícula.</p>
+    <p><strong>Por qué existe "Total país sin Buenos Aires".</strong> Desde 2024 Buenos Aires aplica un nuevo régimen académico en secundaria (Res. 1650/24) que elimina la repitencia en bloque: solo se recuperan las materias desaprobadas. Como la provincia tiene más del 40 % de la matrícula secundaria del país, su cambio arrastra el total nacional; sin ella se ve la tendencia del resto.</p>
+    <p><strong>Cómo leer.</strong> Los años son los del período que informan los datos: cada archivo se publica con el año siguiente (el archivo 2021 informa 2020, como lo muestra la repitencia casi nula de la pandemia). Un anillo amarillo marca un dato con alerta de calidad registrada. Vacío no es cero: sin oferta o sin dato, no se dibuja.</p>
+    <a class="ir-mapa" href="#mapa">Ir al mapa</a>
+  </section>
+
+  <section id="mapa" role="tabpanel" aria-labelledby="tab-mapa" hidden>
+    <div class="mapa-layout">
+      <div class="mapa-col tarjeta">
+        <div class="totales" id="totales"></div>
+        <p class="ayuda">o elegí una provincia en el mapa</p>
+        <svg id="svg-mapa" role="group" aria-label="Mapa de provincias"></svg>
+      </div>
+      <div class="tarjeta" id="panel">
+        <p class="vacio">Elegí un total o una provincia para ver sus datos.</p>
+      </div>
+    </div>
+  </section>
+  <footer>Generado el __FECHA__ por src/edu_data/visor_matricula.py. No editar este archivo.</footer>
+</main>
+
+<script id="datos" type="application/json">__DATOS__</script>
+<script>
+"use strict";
+const DATOS = JSON.parse(document.getElementById("datos").textContent);
+const ANIOS = DATOS.anios;
+const TOTAL_PAIS = "Total país", SIN_BA = "Total país sin Buenos Aires";
+const NS = "http://www.w3.org/2000/svg";
+const SERIES = {
+  inicial: { etiqueta: "Inicial", color: "var(--series-3)" },
+  primaria: { etiqueta: "Primaria", color: "var(--series-1)" },
+  secundaria: { etiqueta: "Secundaria", color: "var(--series-2)" },
+};
+const INDICADORES = {
+  matricula: { boton: "Matrícula", titulo: "Matrícula", niveles: ["inicial", "primaria", "secundaria"], pct: false, alerta: "alerta_matricula" },
+  repitentes: { boton: "Repitencia", titulo: "% de repitentes", campo: "pct_repitentes", niveles: ["primaria", "secundaria"], pct: true, alerta: "alerta_repitentes" },
+  sobreedad: { boton: "Sobreedad", titulo: "% con sobreedad", campo: "pct_sobreedad", niveles: ["primaria", "secundaria"], pct: true, alerta: "alerta_sobreedad" },
+};
+const SEXOS = { matricula: "Total", varones: "Varones", mujeres: "Mujeres" };
+const estado = { unidad: null, indicador: null, sexo: "matricula", sector: "Todos", ambito: "Todos" };
+
+const fmtNum = new Intl.NumberFormat("es-AR");
+const fmtPct = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const formato = (v, pct) => v == null ? "—" : pct ? fmtPct.format(v) + " %" : fmtNum.format(v);
+
+function svgEl(tag, attrs = {}, padre) {
+  const nodo = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) nodo.setAttribute(k, v);
+  if (padre) padre.appendChild(nodo);
+  return nodo;
+}
+function htmlEl(tag, props = {}, padre) {
+  const nodo = Object.assign(document.createElement(tag), props);
+  if (padre) padre.appendChild(nodo);
+  return nodo;
+}
+
+// ---------- Pestañas ----------
+function mostrarPestana(id) {
+  for (const p of ["acerca", "mapa"]) {
+    document.getElementById(p).hidden = p !== id;
+    document.getElementById("tab-" + p).setAttribute("aria-selected", String(p === id));
+  }
+}
+document.getElementById("tab-acerca").addEventListener("click", () => { location.hash = "acerca"; });
+document.getElementById("tab-mapa").addEventListener("click", () => { location.hash = "mapa"; });
+window.addEventListener("hashchange", () => mostrarPestana(location.hash === "#mapa" ? "mapa" : "acerca"));
+mostrarPestana(location.hash === "#mapa" ? "mapa" : "acerca");
+
+// ---------- Mapa ----------
+function dibujarMapa() {
+  const m = DATOS.mapa, svg = document.getElementById("svg-mapa");
+  svg.setAttribute("viewBox", `0 0 ${m.ancho} ${m.alto}`);
+  const capa = svgEl("g", {}, svg);
+  const agregar = (nombre, d, padre) => {
+    const p = svgEl("path", { d, class: "prov", tabindex: 0, role: "button", "aria-label": nombre, "data-prov": nombre }, padre);
+    const t = svgEl("title", {}, p); t.textContent = nombre;
+    p.addEventListener("click", () => elegirUnidad(nombre));
+    p.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); elegirUnidad(nombre); } });
+  };
+  for (const [nombre, d] of Object.entries(m.provincias)) agregar(nombre, d, capa);
+  const [rx, ry, rw, rh] = m.caba.recuadro, [cx, cy] = m.caba.real;
+  svgEl("line", { x1: cx, y1: cy, x2: rx, y2: ry + rh, class: "guia-caba" }, svg);
+  svgEl("circle", { cx, cy, r: 1.8, fill: "var(--muted)" }, svg);
+  svgEl("rect", { x: rx, y: ry, width: rw, height: rh, rx: 4, class: "recuadro" }, svg);
+  const t = svgEl("text", { x: rx + rw / 2, y: ry - 4, "text-anchor": "middle" }, svg); t.textContent = "CABA";
+  agregar("Ciudad de Buenos Aires", m.caba.path, svg);
+
+  const totales = document.getElementById("totales");
+  for (const u of [TOTAL_PAIS, SIN_BA]) {
+    const b = htmlEl("button", { className: "chip", textContent: u }, totales);
+    b.dataset.unidad = u; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => elegirUnidad(u));
+  }
+}
+
+function elegirUnidad(unidad) {
+  estado.unidad = unidad;
+  document.querySelectorAll(".prov").forEach(p => p.classList.toggle("activa", p.dataset.prov === unidad));
+  document.querySelectorAll("#totales .chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.unidad === unidad)));
+  renderPanel();
+  if (window.matchMedia("(max-width: 820px)").matches) document.getElementById("panel").scrollIntoView({ behavior: "smooth" });
+}
+
+// ---------- Panel ----------
+function renderPanel() {
+  const panel = document.getElementById("panel");
+  panel.replaceChildren();
+  htmlEl("h2", { textContent: estado.unidad }, panel);
+  const seg = htmlEl("div", { className: "segmentos", role: "group" }, panel);
+  seg.setAttribute("aria-label", "Indicador");
+  for (const [id, ind] of Object.entries(INDICADORES)) {
+    const b = htmlEl("button", { textContent: ind.boton }, seg);
+    b.setAttribute("aria-pressed", String(estado.indicador === id));
+    b.addEventListener("click", () => { estado.indicador = id; renderPanel(); });
+  }
+  if (!estado.indicador) { htmlEl("p", { className: "vacio", textContent: "Elegí qué querés ver: matrícula, repitencia o sobreedad." }, panel); return; }
+
+  const filtros = htmlEl("div", { className: "filtros" }, panel);
+  const conSexo = estado.indicador === "matricula";
+  selector(filtros, "Sexo", SEXOS, conSexo ? estado.sexo : "matricula", v => { estado.sexo = v; renderPanel(); }, !conSexo);
+  selector(filtros, "Sector", { Todos: "Todos", Estatal: "Estatal", Privado: "Privado" }, estado.sector, v => { estado.sector = v; renderPanel(); });
+  selector(filtros, "Ámbito", { Todos: "Todos", Urbano: "Urbano", Rural: "Rural" }, estado.ambito, v => { estado.ambito = v; renderPanel(); });
+  if (!conSexo) htmlEl("span", { className: "nota-sexo", textContent: "El dataset no informa sexo para este indicador." }, filtros);
+
+  const u = DATOS.unidades[estado.unidad];
+  const corte = u.cortes[estado.sector + "|" + estado.ambito];
+  if (!Object.keys(corte.nivel).length) { htmlEl("p", { className: "vacio", textContent: "Sin oferta para este corte." }, panel); return; }
+  const ind = INDICADORES[estado.indicador];
+  const campo = conSexo ? estado.sexo : ind.campo;
+  let titulo = ind.titulo + (conSexo && estado.sexo !== "matricula" ? " · " + SEXOS[estado.sexo].toLowerCase() : "");
+  const recorte = [estado.sector !== "Todos" ? estado.sector.toLowerCase() : null, estado.ambito !== "Todos" ? estado.ambito.toLowerCase() : null].filter(Boolean);
+  if (recorte.length) titulo += " · " + recorte.join(", ");
+  panel.appendChild(grafico({ titulo, campo, pct: ind.pct, niveles: ind.niveles, alerta: ind.alerta, conSexo: conSexo && estado.sexo === "matricula" }, corte.nivel, u.alertas));
+
+  const alertas = new Map();
+  for (const n of ind.niveles) (u.alertas[n]?.[ind.alerta] ?? []).forEach((t, i) => {
+    if (!t || corte.nivel[n]?.[campo]?.[i] == null) return;
+    for (const x of t.split(" | ")) { if (!alertas.has(x)) alertas.set(x, new Set()); alertas.get(x).add(ANIOS[i]); }
+  });
+  if (alertas.size) {
+    htmlEl("h3", { textContent: "Alertas" }, panel);
+    const ul = htmlEl("ul", { className: "alertas" }, panel);
+    for (const [t, a] of alertas) htmlEl("li", { textContent: [...a].sort().join(", ") + ": " + t }, ul);
+  }
+
+}
+
+function selector(padre, rotulo, opciones, valor, alCambiar, deshabilitado = false) {
+  const label = htmlEl("label", {}, padre);
+  label.appendChild(document.createTextNode(rotulo));
+  const s = htmlEl("select", { disabled: deshabilitado }, label);
+  for (const [v, t] of Object.entries(opciones)) htmlEl("option", { value: v, textContent: t }, s);
+  s.value = valor;
+  s.addEventListener("change", () => alCambiar(s.value));
+}
+
+// ---------- Gráfico de evolución ----------
+function escalaNice(max) {
+  if (!(max > 0)) return { tope: 1, paso: 0.25 };
+  const crudo = max / 4, pot = Math.pow(10, Math.floor(Math.log10(crudo)));
+  const paso = [1, 2, 2.5, 5, 10].map(m => m * pot).find(p => p >= crudo);
+  return { tope: Math.ceil(max / paso) * paso, paso };
+}
+function abreviar(v, pct) {
+  if (pct) return fmtNum.format(v);
+  if (v >= 1e6) return fmtNum.format(v / 1e6) + " M";
+  if (v >= 1e3) return fmtNum.format(Math.round(v / 1e3)) + " mil";
+  return fmtNum.format(v);
+}
+
+function grafico(def, nivel, alertasUnidad) {
+  const cont = htmlEl("div", { className: "grafico" });
+  htmlEl("h3", { textContent: def.titulo }, cont);
+  const W = 640, H = 260, m = { t: 10, r: 84, b: 24, l: 56 };
+  const series = def.niveles.filter(n => nivel[n]).map(n => ({
+    nivel: n, ...SERIES[n],
+    puntos: ANIOS.map((a, i) => ({
+      anio: a, valor: nivel[n][def.campo][i],
+      varones: nivel[n].varones[i], mujeres: nivel[n].mujeres[i],
+      alerta: alertasUnidad[n]?.[def.alerta]?.[i] ?? null,
+    })),
+  })).filter(s => s.puntos.some(p => p.valor != null));
+
+  const max = Math.max(0, ...series.flatMap(s => s.puntos.map(p => p.valor ?? 0)));
+  const { tope, paso } = escalaNice(max);
+  const x = a => m.l + (a - ANIOS[0]) / (ANIOS.length - 1) * (W - m.l - m.r);
+  const y = v => H - m.b - v / tope * (H - m.t - m.b);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": def.titulo });
+  for (let v = 0; v <= tope + 1e-9; v += paso) {
+    svgEl("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
+    svgEl("text", { x: m.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = abreviar(v, def.pct);
+  }
+  for (const a of ANIOS.filter(a => a % 2 === 1)) svgEl("text", { x: x(a), y: H - 6, "text-anchor": "middle" }, svg).textContent = a;
+
+  const etiquetas = [];
+  for (const s of series) {
+    // Un vacío corta la línea: no se interpola ni se dibuja como 0
+    let tramo = [];
+    const cerrar = () => {
+      if (tramo.length > 1) svgEl("path", { d: "M" + tramo.join("L"), fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+      if (tramo.length === 1) svgEl("circle", { cx: tramo[0][0], cy: tramo[0][1], r: 3, fill: s.color }, svg);
+      tramo = [];
+    };
+    for (const p of s.puntos) { if (p.valor == null) cerrar(); else tramo.push([x(p.anio), y(p.valor)]); }
+    cerrar();
+    for (const p of s.puntos) if (p.valor != null && p.alerta) svgEl("circle", { cx: x(p.anio), cy: y(p.valor), r: 5.5, fill: "var(--surface-1)", stroke: "var(--warning)", "stroke-width": 2 }, svg);
+    const ultimo = [...s.puntos].reverse().find(p => p.valor != null);
+    if (ultimo) etiquetas.push({ x: x(ultimo.anio), y: y(ultimo.valor), texto: s.etiqueta });
+  }
+  etiquetas.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < etiquetas.length; i++) etiquetas[i].y = Math.max(etiquetas[i].y, etiquetas[i - 1].y + 13);
+  for (const e of etiquetas) svgEl("text", { x: e.x + 8, y: e.y + 4, class: "etiqueta" }, svg).textContent = e.texto;
+
+  const guia = svgEl("line", { y1: m.t, y2: H - m.b, stroke: "var(--axis)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const zona = svgEl("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent", tabindex: 0 }, svg);
+  cont.appendChild(svg);
+
+  const leyenda = htmlEl("div", { className: "leyenda" }, cont);
+  for (const s of series) {
+    const sp = htmlEl("span", {}, leyenda), i = htmlEl("i", {}, sp);
+    i.style.background = s.color; sp.appendChild(document.createTextNode(s.etiqueta));
+  }
+  if (series.some(s => s.puntos.some(p => p.alerta && p.valor != null))) {
+    const sp = htmlEl("span", {}, leyenda); htmlEl("i", { className: "anillo" }, sp);
+    sp.appendChild(document.createTextNode("alerta registrada"));
+  }
+
+  const tip = htmlEl("div", { className: "tooltip" }, cont);
+  const mostrar = anio => {
+    guia.setAttribute("x1", x(anio)); guia.setAttribute("x2", x(anio)); guia.setAttribute("visibility", "visible");
+    tip.replaceChildren();
+    htmlEl("div", { className: "anio", textContent: anio }, tip);
+    const alertas = new Set();
+    for (const s of series) {
+      const p = s.puntos.find(q => q.anio === anio);
+      const fila = htmlEl("div", { className: "fila" }, tip);
+      htmlEl("i", {}, fila).style.background = s.color;
+      htmlEl("b", { textContent: formato(p.valor, def.pct) }, fila);
+      fila.appendChild(document.createTextNode(s.etiqueta));
+      if (def.conSexo && p.valor != null) htmlEl("div", { className: "sexo", textContent: `varones ${formato(p.varones)} · mujeres ${formato(p.mujeres)}` }, tip);
+      if (p.alerta && p.valor != null) p.alerta.split(" | ").forEach(t => alertas.add(t));
+    }
+    for (const t of alertas) htmlEl("div", { className: "alerta", textContent: "⚠ " + t }, tip);
+    const caja = svg.getBoundingClientRect(), escala = caja.width / W;
+    tip.style.display = "block";
+    const izq = x(anio) * escala + 14;
+    tip.style.left = Math.max(0, izq + tip.offsetWidth > caja.width ? x(anio) * escala - tip.offsetWidth - 14 : izq) + "px";
+    tip.style.top = "48px";
+  };
+  const ocultar = () => { tip.style.display = "none"; guia.setAttribute("visibility", "hidden"); };
+  zona.addEventListener("pointermove", ev => {
+    const caja = svg.getBoundingClientRect();
+    const px = (ev.clientX - caja.left) * W / caja.width;
+    const anio = Math.round(ANIOS[0] + (px - m.l) / (W - m.l - m.r) * (ANIOS.length - 1));
+    mostrar(Math.min(ANIOS.at(-1), Math.max(ANIOS[0], anio)));
+  });
+  zona.addEventListener("pointerleave", ocultar);
+  let foco = ANIOS.at(-1);
+  zona.addEventListener("focus", () => mostrar(foco));
+  zona.addEventListener("blur", ocultar);
+  zona.addEventListener("keydown", ev => {
+    if (ev.key === "ArrowLeft") foco = Math.max(ANIOS[0], foco - 1);
+    else if (ev.key === "ArrowRight") foco = Math.min(ANIOS.at(-1), foco + 1);
+    else return;
+    ev.preventDefault(); mostrar(foco);
+  });
+  return cont;
+}
+
+dibujarMapa();
+</script>
+</body>
+</html>

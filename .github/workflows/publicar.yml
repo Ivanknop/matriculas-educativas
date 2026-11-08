@@ -1,0 +1,55 @@
+# Construye el visor desde data/raw/ (versionado) y lo publica en GitHub Pages.
+# Requiere en GitHub: Settings → Pages → Source: "GitHub Actions".
+name: publicar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Dependencias
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+
+      # CI=true: si faltan los crudos versionados, los tests de datos fallan en vez de saltearse
+      - name: Tests
+        run: uv run pytest
+
+      # raw → processed → controles → visor → outputs/sitio/index.html
+      - name: Construir
+        run: uv run python -m edu_data.construir_todo
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: outputs/sitio
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4
